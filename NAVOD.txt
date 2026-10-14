@@ -1,0 +1,18 @@
+SPOTOVÁ ELEKTŘINA – OTE + ČNB
+============================
+Tato verze vyžaduje hosting NETLIFY s podporou Functions.
+Na Macu rozbalte ZIP. Na Netlify v přihlášeném účtu vytvořte projekt
+pomocí importu z Git repozitáře, kam nahrajete všechny soubory
+včetně složky netlify/functions a netlify.toml.
+
+POZOR: Jednoduché přetažení složky do Netlify Drop nemusí nasadit
+serverovou funkci. Pokud při otevření aplikace hlásí chybu 404 pro
+/.netlify/functions/ote-prices, funkce nebyla nasazena.
+
+Pro automatické načítání oficiálních dat se používá serverová funkce,
+protože OTE a ČNB nemusí povolovat přímé načtení z prohlížeče.
+Kurz ČNB se aktualizuje v pracovní dny, používá se poslední zveřejněný.
+
+Výsledky OTE jsou čteny z veřejné HTML tabulky. Pokud OTE změní její
+strukturu, aplikace zobrazí chybu místo nesprávné ceny. Bez živého
+testu dostupnosti zdrojů nelze garantovat okamžitou funkčnost.

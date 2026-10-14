@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#102c55">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Spot elektřina">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="manifest" href="./manifest.webmanifest">
+<title>Spotová elektřina – přehled cen</title>
+<style>
+:root{color-scheme:light dark;--bg:#f4f6f8;--card:#fff;--text:#17212b;--muted:#64748b;--line:#dbe2ea;--green:#dcfce7;--greenText:#166534;--red:#fee2e2;--redText:#991b1b;--blue:#dbeafe;--blueText:#1d4ed8;--gold:#fef3c7;--goldText:#92400e}
+@media(prefers-color-scheme:dark){:root{--bg:#111827;--card:#1f2937;--text:#f3f4f6;--muted:#aab5c5;--line:#374151;--green:#123b28;--greenText:#86efac;--red:#4a2024;--redText:#fca5a5;--blue:#1e3a5f;--blueText:#93c5fd;--gold:#473714;--goldText:#fde68a}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.wrap{max-width:1050px;margin:0 auto;padding:24px 16px 48px}h1{font-size:clamp(24px,4vw,34px);margin:0 0 6px}.sub{color:var(--muted);margin:0 0 22px}.toolbar,.cards,.settings{display:flex;gap:12px;flex-wrap:wrap}.toolbar{align-items:center;margin-bottom:16px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}.metric{flex:1;min-width:180px}.label{color:var(--muted);font-size:13px}.big{font-size:27px;font-weight:750;letter-spacing:-.5px;margin-top:4px}.small{color:var(--muted);font-size:12px;margin-top:4px}button,select,input{font:inherit;color:var(--text);background:var(--card);border:1px solid var(--line);border-radius:9px;padding:9px 12px}button{cursor:pointer}button:hover{filter:brightness(.96)}.toggle{display:flex;align-items:center;gap:9px}.toggle input{width:18px;height:18px;accent-color:#2563eb}.settings{margin:16px 0}.settings .card{flex:1;min-width:220px}.settings label{display:flex;align-items:center;gap:8px;margin:8px 0}.settings input[type=number]{width:100px}.status{color:var(--muted);font-size:13px;margin:12px 0}.notice{background:var(--gold);color:var(--goldText);padding:12px 14px;border-radius:12px;font-size:13px;margin:14px 0}.table-wrap{overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:14px}table{border-collapse:collapse;width:100%;min-width:600px}th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th{font-size:12px;color:var(--muted);font-weight:650;background:var(--card);position:sticky;top:0}th:first-child,td:first-child{text-align:left}.tariff{display:inline-block;padding:3px 8px;border-radius:99px;font-size:12px;font-weight:700}.nt{background:var(--green);color:var(--greenText)}.vt{background:var(--red);color:var(--redText)}.cheapest{background:var(--blue);color:var(--blueText)}tr:last-child td{border-bottom:0}.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:12px 0}.footer{color:var(--muted);font-size:12px;margin-top:18px}.hidden{display:none!important}.error{color:var(--redText)}
+
+.graph-card{margin:16px 0}.graph-header{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.graph-area{position:relative;width:100%;overflow:hidden;touch-action:pan-y}
+#priceGraph{display:block;width:100%;height:auto;min-height:220px}
+.graph-tooltip{position:absolute;pointer-events:none;background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:9px 12px;box-shadow:0 5px 20px #0002;font-size:13px;z-index:2;white-space:nowrap}
+.graph-tooltip.hidden{display:none}.graph-hint{font-size:12px;color:var(--muted)}
+.graph-key{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--muted)}
+.graph-dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
+@media(max-width:650px){
+.wrap{padding:16px 10px 36px}h1{font-size:25px}.card{padding:12px}
+.metric{min-width:calc(50% - 8px)}.metric:first-child{min-width:100%}
+.big{font-size:22px}.settings .card{min-width:100%}
+#priceGraph{min-height:170px}.graph-header{gap:4px}
+.toolbar{gap:8px}button,select{padding:10px 9px}
+}
+</style>
+</head>
+<body><main class="wrap">
+<h1>Spotová elektřina · OTE</h1><p class="sub">15minutové ceny · sazba D45d · ČEZ Distribuce · jistič 3×25 A</p>
+<div class="toolbar"><label for="day">Den:</label><select id="day"><option value="today">Dnes</option><option value="tomorrow">Zítra</option></select><button id="refresh">Načíst ceny znovu</button><span id="updated" class="small"></span></div>
+<div class="cards">
+ <div class="card metric"><div class="label">Aktuální / nejbližší dostupná cena s DPH</div><div class="big" id="current">—</div><div class="small">Spot z OTE přepočtený kurzem ČNB (DPH podle nastavení)</div></div>
+ <div class="card metric"><div class="label">Nejlevnější souvislé 4 hodiny</div><div class="big" id="bestWindow">—</div><div class="small" id="bestAverage">Průměrná cena včetně vybraných položek</div></div>
+ <div class="card metric"><div class="label">Průměrná cena vybraného dne</div><div class="big" id="dayAverage">—</div><div class="small">Kč/kWh včetně DPH</div></div>
+</div>
+<div class="settings">
+ <div class="card"><strong>Výpočet ceny</strong>
+  <label class="toggle"><input id="vat" type="checkbox" checked> Připočítat DPH 21 %</label>
+  <label class="toggle"><input id="fees" type="checkbox"> Přičíst distribuci VT/NT</label>
+  <div class="small">Distribuce (bez DPH): VT 754,77 Kč/MWh · NT 116,50 Kč/MWh.</div>
+  <label class="toggle"><input id="otherFees" type="checkbox"> Přidat další variabilní regulované položky</label>
+  <div class="small">Další položky nejsou v této první verzi dopočítány, protože jejich přesné nastavení závisí na platném ceníku a způsobu účtování.</div>
+ </div>
+ <div class="card"><strong>Volitelné obchodní náklady</strong>
+  <label>Obchodní přirážka (Kč/MWh, bez DPH) <input id="markup" type="number" min="0" step="1" value="0"></label>
+  <label>Stálý měsíční poplatek (Kč) <input id="monthly" type="number" min="0" step="1" value="0"></label>
+  <div class="small">Měsíční poplatek se nezapočítává do hodinové ceny, protože závisí na celkové spotřebě.</div>
+ </div>
+</div>
+<div class="notice" id="notice">Načítám oficiální ceny OTE a kurz ČNB…</div>
+<div class="legend"><span><span class="tariff nt">NT</span> nízký tarif</span><span><span class="tariff vt">VT</span> vysoký tarif</span><span><span class="tariff cheapest">4h okno</span> nejlevnější souvislé čtyři hodiny</span></div>
+
+<section class="card graph-card">
+ <div class="graph-header"><strong>Graf spotových cen po 15 minutách</strong><span class="graph-hint">Najeďte kurzorem nebo klepněte na graf pro čas a cenu</span></div>
+ <div class="graph-area" id="graphArea"><svg id="priceGraph" viewBox="0 0 1000 310" role="img" aria-label="Graf cen elektřiny v průběhu dne"></svg><div id="graphTooltip" class="graph-tooltip hidden"></div></div>
+ <div class="graph-key"><span><i class="graph-dot" style="background:#2563eb"></i>Výsledná cena</span><span><i class="graph-dot" style="background:#16a34a"></i>NT</span><span><i class="graph-dot" style="background:#ef4444"></i>VT</span><span><i class="graph-dot" style="background:#eab308"></i>Nejlevnější 4 hodiny</span></div>
+</section>
+<div class="table-wrap"><table><thead><tr><th>Časový interval</th><th>Tarif</th><th>Spot / DPH</th><th>Distribuce</th><th>Výsledná cena</th><th>Pořadí ceny</th></tr></thead><tbody id="rows"><tr><td colspan="6">Načítám…</td></tr></tbody></table></div>
+<div class="footer">Zdroj spotových cen: OTE, oficiální výsledky denního trhu (15minutová data v EUR/MWh). Přepočet kurzem devizového trhu ČNB (poslední zveřejněný kurz). Distribuční hodnoty jsou přednastavené pro D45d v území ČEZ Distribuce, ceník 2026; nejsou to všechny položky konečné faktury. API vyžaduje připojení k internetu. Data se obnovují automaticky každých 15 minut. Na přechodu letního času může být 92 nebo 100 intervalů.</div>
+</main>
+<script>
+const API='/.netlify/functions/ote-prices';
+const $=id=>document.getElementById(id);let dataset=null;let fxRate=null;let fxDate=null;
+const fmt=(n,d=3)=>Number(n).toLocaleString('cs-CZ',{minimumFractionDigits:d,maximumFractionDigits:d});
+const money=(n,d=2)=>fmt(n,d)+' Kč/kWh';
+function isVT(hour){return (hour>=9&&hour<10)||(hour>=11&&hour<12)||(hour>=13&&hour<14)||(hour>=16&&hour<17)}
+function getItems(){
+ if(!dataset)return[];
+ let raw=$('day').value==='tomorrow'?dataset.hoursTomorrow:dataset.hoursToday;
+ if(!raw||!raw.length)return[];
+ return raw.map(x=>({hour:Number(x.hour),minute:Number(x.minute||0),spot:Number(x.priceEUR)*fxRate/1000,rank:Number(x.levelNum96||x.levelNum||0),level:x.level||''})).sort((a,b)=>a.hour-b.hour||a.minute-b.minute);
+}
+
+function renderGraph(items){
+ const svg=$('priceGraph'),tip=$('graphTooltip'),area=$('graphArea');
+ if(!items.length){svg.innerHTML='<text x="500" y="155" text-anchor="middle" fill="currentColor">Pro tento den nejsou dostupná data</text>';tip.classList.add('hidden');return}
+ const W=1000,H=310,L=65,R=18,T=20,B=42,PW=W-L-R,PH=H-T-B;
+ const vals=items.map(x=>x.total),lo=Math.min(0,...vals),hi=Math.max(...vals);
+ const span=Math.max(0.2,hi-lo),minY=lo-span*.09,maxY=hi+span*.12;
+ const xp=m=>L+PW*m/1440,yp=v=>T+PH-(v-minY)/(maxY-minY)*PH;
+ const ns='http://www.w3.org/2000/svg';
+ const node=(name,attrs,parent=svg)=>{let el=document.createElementNS(ns,name);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,String(v));parent.appendChild(el);return el};
+ svg.replaceChildren();
+ for(let i=0;i<=4;i++){let v=minY+(maxY-minY)*i/4,y=yp(v);node('line',{x1:L,x2:W-R,y1:y,y2:y,stroke:'currentColor','stroke-opacity':'.13'});let tx=node('text',{x:L-9,y:y+4,'text-anchor':'end',fill:'currentColor','font-size':12});tx.textContent=fmt(v,2)}
+ for(let h=0;h<=24;h+=3){let x=xp(h*60);node('line',{x1:x,x2:x,y1:T,y2:H-B,stroke:'currentColor','stroke-opacity':'.07'});let tx=node('text',{x,y:H-13,'text-anchor':'middle',fill:'currentColor','font-size':12});tx.textContent=String(h).padStart(2,'0')+':00'}
+ for(const x of items){let x0=xp(x.start),x1=xp(x.end);node('rect',{x:x0,y:T,width:Math.max(0,x1-x0),height:PH,fill:x.vt?'#ef4444':'#16a34a',opacity:'.075'});if(x.best)node('rect',{x:x0,y:T,width:x1-x0,height:PH,fill:'#eab308',opacity:'.18'})}
+ let path=items.map((x,i)=>(i?'L':'M')+xp(x.start+7.5).toFixed(2)+','+yp(x.total).toFixed(2)).join(' ');
+ node('path',{d:path,fill:'none',stroke:'#2563eb','stroke-width':2.6,'stroke-linejoin':'round','stroke-linecap':'round'});
+ const cross=node('line',{x1:0,x2:0,y1:T,y2:H-B,stroke:'#2563eb','stroke-dasharray':'4 3',visibility:'hidden'});
+ const dot=node('circle',{cx:0,cy:0,r:5,fill:'#2563eb',stroke:'white','stroke-width':2,visibility:'hidden'});
+ const overlay=node('rect',{x:L,y:T,width:PW,height:PH,fill:'transparent',style:'cursor:crosshair'});
+ function show(e){
+  let r=svg.getBoundingClientRect(),px=(e.clientX-r.left)/r.width*W;
+  let m=Math.max(0,Math.min(1439,(px-L)/PW*1440));
+  let idx=items.findIndex(x=>m>=x.start&&m<x.end);
+  if(idx<0){idx=items.reduce((a,x,i)=>Math.abs(x.start-m)<Math.abs(items[a].start-m)?i:a,0)}
+  let x=items[idx],cx=xp(x.start+7.5),cy=yp(x.total);
+  cross.setAttribute('x1',cx);cross.setAttribute('x2',cx);cross.setAttribute('visibility','visible');
+  dot.setAttribute('cx',cx);dot.setAttribute('cy',cy);dot.setAttribute('visibility','visible');
+  const t=m=>String(Math.floor(m/60)%24).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+  tip.innerHTML='<b>'+t(x.start)+'–'+t(x.end)+'</b> · '+(x.vt?'VT':'NT')+'<br><b>'+money(x.total)+'</b><br>Spot: '+money(x.spotWithVat)+(x.best?'<br>Nejlevnější 4h okno':'');
+  tip.classList.remove('hidden');
+  let ar=area.getBoundingClientRect(),left=(cx/W)*ar.width+12;
+  tip.style.left=Math.max(4,Math.min(ar.width-tip.offsetWidth-4,left))+'px';
+  tip.style.top=Math.max(3,cy/H*ar.height-tip.offsetHeight-8)+'px';
+ }
+ overlay.addEventListener('pointermove',show);
+ overlay.addEventListener('pointerdown',show);
+ overlay.addEventListener('pointerleave',()=>{tip.classList.add('hidden');cross.setAttribute('visibility','hidden');dot.setAttribute('visibility','hidden')});
+}
+
+function calculate(){
+ let items=getItems();
+ if(!items.length){renderGraph([]);$('rows').innerHTML='<tr><td colspan="6">Ceny pro vybraný den zatím nejsou zveřejněny.</td></tr>';$('notice').textContent=$('day').value==='tomorrow'?'Zítřejší ceny ještě nejsou dostupné. Zkuste to po zveřejnění trhu, obvykle odpoledne.':'Data se nepodařilo načíst.';$('current').textContent='—';$('bestWindow').textContent='—';$('dayAverage').textContent='—';return}
+ const vat=$('vat').checked,fees=$('fees').checked,markup=Math.max(0,Number($('markup').value)||0)/1000;
+ for(const x of items){x.vt=isVT(x.hour);x.dist=fees?(x.vt?754.77:116.50)/1000:0;x.spotWithVat=x.spot*(vat?1.21:1);x.total=(x.spot+markup+x.dist)*(vat?1.21:1);x.distShown=fees?x.dist*(vat?1.21:1):0;x.start=x.hour*60+x.minute;x.end=x.start+15}
+ // Nejlevnější souvislé čtyři hodiny = 16 navazujících čtvrthodinových intervalů.
+ let best=null;for(let i=0;i<=items.length-16;i++){let seq=items.slice(i,i+16);if(seq.length===16&&seq.every((x,j)=>j===0||x.start===seq[j-1].end)){let avg=seq.reduce((sum,x)=>sum+x.total,0)/seq.length;if(!best||avg<best.avg)best={start:seq[0].start,end:seq[15].end,avg,seq}}}
+ items.forEach(x=>x.best=best&&x.start>=best.start&&x.end<=best.end);let avg=items.reduce((sum,x)=>sum+x.total,0)/items.length;
+ const now=new Date();let current=items.find(x=>x.start<=now.getHours()*60+now.getMinutes()&&x.end>now.getHours()*60+now.getMinutes());if($('day').value==='tomorrow')current=items[0];$('current').textContent=current?money(current.total):'—';$('dayAverage').textContent=money(avg);$('bestWindow').textContent=best?String(Math.floor(best.start/60)).padStart(2,'0')+':'+String(best.start%60).padStart(2,'0')+'–'+String(Math.floor(best.end/60)).padStart(2,'0')+':'+String(best.end%60).padStart(2,'0'):'—';$('bestAverage').textContent=best?'Průměr za 4 hodiny: '+money(best.avg):'Není dostatek souvislých dat';
+ $('notice').textContent='Zobrazeno '+items.length+' patnáctiminutových intervalů. Spot / DPH '+(vat?'zapnuto':'vypnuto')+'. '+(fees?'Připočtena distribuční sazba D45d podle VT/NT.':'Distribuce není zahrnuta.')+' Automatická obnova každých 15 minut.';
+ renderGraph(items);
+ $('rows').innerHTML=items.map(x=>{let t=String(x.hour).padStart(2,'0')+':'+String(x.minute).padStart(2,'0');let end=x.end;let et=String(Math.floor(end/60)%24).padStart(2,'0')+':'+String(end%60).padStart(2,'0');return `<tr class="${x.best?'bestrow':''}"><td>${t}–${et} ${x.best?'<span class="tariff cheapest">4h okno</span>':''}</td><td><span class="tariff ${x.vt?'vt':'nt'}">${x.vt?'VT':'NT'}</span></td><td>${money(x.spotWithVat)}</td><td>${fees?money(x.distShown):'—'}</td><td><strong>${money(x.total)}</strong></td><td>${x.rank||'—'}</td></tr>`}).join('');
+}
+async function load(){ $('notice').textContent='Načítám aktuální ceny…';$('refresh').disabled=true;try{let r=await fetch(API,{cache:'no-store'});let result=await r.json();if(!r.ok)throw new Error(result.error||'HTTP '+r.status);dataset=result;fxRate=result.eurCzk;fxDate=result.fxDate;$('updated').textContent='ČNB '+fmt(fxRate,3)+' Kč/EUR ('+fxDate+') · načteno '+new Date().toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'});calculate()}catch(e){$('notice').innerHTML='Nepodařilo se načíst živé ceny: '+String(e.message).replace(/[<>&]/g,'')+'. Pokud jste soubor otevřeli z aplikace Soubory, otevřete jej jako web přes HTTPS. Pokud ani na webu ceny nenaběhnou, zdroj API pravděpodobně blokuje přístup z jiné domény. Pro kontrolu otevřete <a href="https://www.ote-cr.cz/cs/kratkodobe-trhy/elektrina/denni-trh" target="_blank" rel="noreferrer">zdrojová data API</a>.';$('rows').innerHTML='<tr><td colspan="6">Data nejsou dostupná. Zkuste Načíst ceny znovu.</td></tr>'}finally{$('refresh').disabled=false}}
+['day','vat','fees','otherFees','markup','monthly'].forEach(id=>$(id).addEventListener('change',calculate));$('refresh').addEventListener('click',load);load();setInterval(load,15*60*1000);
+</script></body></html>
